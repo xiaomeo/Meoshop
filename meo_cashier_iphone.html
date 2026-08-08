@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Meo Cashier</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f5f7;color:#111827;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.wrap{max-width:560px;margin:auto;padding:14px 14px 35px}.head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+h1{font-size:27px;margin:0}.sub{font-size:13px;color:#6b7280}.status{padding:7px 10px;border-radius:99px;background:#e5e7eb;font-weight:800;font-size:12px}
+.tabs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:10px}.tab{border:0;border-radius:13px;padding:13px 5px;background:#e9ecf0;font-size:16px;font-weight:800;color:#1877f2}.tab.on{background:#111827;color:#fff}
+.panel{display:none}.panel.on{display:block}.card{background:#fff;border-radius:20px;padding:16px;margin:10px 0;box-shadow:0 3px 15px #0000000b}
+.hero{background:#111827;color:white;border-radius:21px;padding:19px;margin-bottom:12px}.hero .label{font-size:13px;color:#c4c7ce}.hero .money{font-size:38px;font-weight:900;margin:4px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.prod{border:0;border-radius:17px;background:#eef0f3;padding:16px 8px;font-size:18px;font-weight:850;min-height:88px}.prod small{display:block;font-size:12px;color:#6b7280;margin-top:5px}.prod:active,.btn:active{transform:scale(.98)}
+.title{font-size:20px;font-weight:900}.muted{color:#6b7280;font-size:13px;line-height:1.45}.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #edf0f2}.row:last-child{border-bottom:0}
+input{width:155px;padding:11px;border:1px solid #d6d9de;border-radius:11px;font-size:16px;text-align:right}.btn{border:0;border-radius:14px;padding:13px;font-size:15px;font-weight:850;background:#eef0f3}.primary{background:#111827;color:#fff}.danger{background:#fee2e2;color:#991b1b}.ok{background:#dcfce7;color:#166534}
+.badge{font-size:12px;font-weight:850;padding:6px 9px;border-radius:99px}.good{background:#dcfce7;color:#166534}.bad{background:#fee2e2;color:#991b1b}
+.empty{text-align:center;color:#9ca3af;padding:18px}.history{padding:12px 0;border-bottom:1px solid #eee}.history:last-child{border-bottom:0}.historyTop{display:flex;justify-content:space-between;font-weight:850}.small{font-size:12px;color:#6b7280;line-height:1.5}
+.setting{display:grid;grid-template-columns:1fr 120px;gap:8px;margin:8px 0}.setting input{text-align:left;width:100%}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="head"><div><h1>🧾 Meo Cashier</h1><div class="sub" id="today"></div></div><div class="status" id="status">Đang bán</div></div>
+
+<div class="tabs">
+<button class="tab on" data-tab="sell">Bán lẻ</button>
+<button class="tab" data-tab="close">Chốt ca</button>
+<button class="tab" data-tab="history">Lịch sử</button>
+</div>
+
+<div id="sell" class="panel on">
+<div class="hero"><div class="label">TỔNG BÁN LẺ</div><div class="money" id="total">0đ</div><div class="small" id="qtyText">0 món</div></div>
+<div class="card"><div class="title">🛒 Bấm món khi khách mua</div><div class="muted">Mỗi lần bấm = 1 món. Không cần ghi tay.</div><div class="grid" id="products"></div></div>
+<div class="card"><div class="title">📋 Đã bán</div><div id="cart"></div>
+<div class="grid" style="margin-top:10px"><button class="btn" id="undo">↩️ Hoàn tác</button><button class="btn danger" id="clear">🗑️ Xóa</button></div></div>
+</div>
+
+<div id="close" class="panel">
+<div class="card"><div class="title">💰 Chốt ca</div>
+<div class="row"><span>Tiền đầu ca</span><input id="opening" type="number"></div>
+<div class="row"><span>Doanh thu máy</span><input id="machine" type="number" placeholder="0"></div>
+<div class="row"><span>Bán lẻ</span><b id="retailClose">0đ</b></div>
+<div class="row"><span>Tiền đã chi</span><input id="expense" type="number" placeholder="0"></div>
+<div class="row"><span>💵 Tiền phải có</span><b id="expected">0đ</b></div>
+<div class="row"><span>🧮 Tiền thực tế</span><input id="actual" type="number" placeholder="Đếm tiền cuối ca"></div>
+<div class="row"><span>Chênh lệch</span><b id="diff">0đ</b></div>
+</div>
+<div class="card"><div class="title">🔐 Xác nhận</div><div class="muted">Kiểm tra tiền thực tế trước khi chốt. Ca đã chốt sẽ được lưu vào lịch sử.</div><button class="btn primary" id="closeShift" style="width:100%;margin-top:12px">✅ CHỐT CA & LƯU</button></div>
+</div>
+
+<div id="history" class="panel"><div class="card"><div class="title">📚 Lịch sử chốt ca</div><div id="historyList"></div></div></div>
+
+<div class="card"><div class="title">⚙️ Cài đặt món</div><div class="muted">Đổi tên hoặc giá món rồi bấm Lưu.</div><div id="settings"></div><button class="btn ok" id="saveSettings" style="width:100%">💾 Lưu cài đặt</button></div>
+</div>
+
+<script>
+(function(){
+var KEY="meo_cashier_stable";
+var defaults=[["🥤 Nước",10000],["🥛 Sữa",12000],["🍞 Bánh",15000],["📦 Đồ khác",10000]];
+var state;
+try{state=JSON.parse(localStorage.getItem(KEY)||"null")}catch(e){state=null}
+if(!state) state={products:defaults.map(function(x){return {name:x[0],price:x[1]}}),counts:[0,0,0,0],opening:1200000,machine:0,expense:0,actual:0,history:[],last:-1};
+if(!state.products||!state.products.length) state.products=defaults.map(function(x){return {name:x[0],price:x[1]}})
+while(state.counts.length<state.products.length)state.counts.push(0);
+
+function $(id){return document.getElementById(id)}
+function money(n){return new Intl.NumberFormat("vi-VN").format(Math.round(Number(n)||0))+"đ"}
+function save(){localStorage.setItem(KEY,JSON.stringify(state))}
+function retail(){var t=0;for(var i=0;i<state.products.length;i++)t+=(state.counts[i]||0)*(Number(state.products[i].price)||0);return t}
+function quantity(){return state.counts.reduce(function(a,b){return a+(b||0)},0)}
+function renderProducts(){
+ $("products").innerHTML="";
+ state.products.forEach(function(p,i){
+  var b=document.createElement("button");b.className="prod";
+  b.innerHTML=p.name+'<small>'+money(p.price)+' • +1</small>';
+  b.onclick=function(){state.counts[i]=(state.counts[i]||0)+1;state.last=i;save();render()};
+  $("products").appendChild(b);
+ });
+}
+function renderCart(){
+ var html="";
+ state.products.forEach(function(p,i){var q=state.counts[i]||0;if(q)html+='<div class="row"><span>'+p.name+' × '+q+'<br><span class="small">'+money(p.price)+' / món</span></span><b>'+money(q*p.price)+'</b></div>'});
+ $("cart").innerHTML=html||'<div class="empty">Chưa có món lẻ nào.</div>';
+}
+function calc(){
+ var op=Number($("opening").value)||0,ma=Number($("machine").value)||0,ex=Number($("expense").value)||0,ac=Number($("actual").value)||0;
+ var need=op+ma+retail()-ex,d=ac-need;
+ $("expected").textContent=money(need);$("diff").textContent=(d>0?"+":"")+money(d);
+ $("diff").style.color=d<0?"#b91c1c":d>0?"#15803d":"#111827";
+ $("status").textContent=ac?(d===0?"Khớp tiền":d>0?"Thừa tiền":"Thiếu tiền"):"Đang bán";
+ $("status").className="status "+(ac&&d===0?"good":ac&&d!==0?"bad":"");
+}
+function renderHistory(){
+ var h=state.history||[];
+ if(!h.length){$("historyList").innerHTML='<div class="empty">Chưa có ca nào.</div>';return}
+ $("historyList").innerHTML=h.map(function(x){
+  return '<div class="history"><div class="historyTop"><span>'+x.time+'</span><span class="badge '+(x.diff===0?"good":"bad")+'">'+(x.diff===0?"KHỚP":(x.diff>0?"THỪA ":"THIẾU ")+money(Math.abs(x.diff)))+'</span></div><div class="small">Đầu ca '+money(x.opening)+' • Máy '+money(x.machine)+' • Lẻ '+money(x.retail)+' • Chi '+money(x.expense)+'</div><div class="small">Phải có '+money(x.expected)+' • Thực tế '+money(x.actual)+'</div></div>'
+ }).join("");
+}
+function renderSettings(){
+ $("settings").innerHTML="";
+ state.products.forEach(function(p,i){
+  var d=document.createElement("div");d.className="setting";
+  var n=document.createElement("input");n.id="name"+i;n.value=p.name;
+  var pr=document.createElement("input");pr.id="price"+i;pr.type="number";pr.value=p.price;
+  d.appendChild(n);d.appendChild(pr);$("settings").appendChild(d);
+ });
+}
+function render(){
+ $("today").textContent=new Intl.DateTimeFormat("vi-VN",{weekday:"long",day:"2-digit",month:"2-digit",year:"numeric"}).format(new Date());
+ $("total").textContent=money(retail());$("qtyText").textContent=quantity()+" món";
+ $("retailClose").textContent=money(retail());
+ renderProducts();renderCart();renderHistory();calc();
+}
+document.querySelectorAll(".tab").forEach(function(b){b.onclick=function(){
+ document.querySelectorAll(".tab").forEach(function(x){x.classList.remove("on")});b.classList.add("on");
+ document.querySelectorAll(".panel").forEach(function(x){x.classList.remove("on")});$(b.getAttribute("data-tab")).classList.add("on");
+}});
+["opening","machine","expense","actual"].forEach(function(id){$(id).oninput=function(){state[id]=Number($(id).value)||0;save();calc()}});
+$("undo").onclick=function(){if(state.last<0){alert("Chưa có thao tác để hoàn tác.");return}if(state.counts[state.last]>0)state.counts[state.last]--;state.last=-1;save();render()};
+$("clear").onclick=function(){if(confirm("Xóa toàn bộ số bán lẻ hiện tại?")){state.counts=state.products.map(function(){return 0});state.last=-1;save();render()}};
+$("saveSettings").onclick=function(){
+ state.products=state.products.map(function(p,i){return {name:$( "name"+i).value||p.name,price:Number($( "price"+i).value)||0}});
+ save();renderSettings();render();alert("✅ Đã lưu cài đặt món.");
+};
+$("closeShift").onclick=function(){
+ var ac=Number($("actual").value)||0;if(ac<=0){alert("Hãy nhập tiền thực tế cuối ca.");return}
+ var op=Number($("opening").value)||0,ma=Number($("machine").value)||0,ex=Number($("expense").value)||0,rt=retail(),need=op+ma+rt-ex,d=ac-need;
+ state.history.unshift({time:new Date().toLocaleString("vi-VN"),opening:op,machine:ma,retail:rt,expense:ex,expected:need,actual:ac,diff:d});
+ if(state.history.length>50)state.history=state.history.slice(0,50);
+ state.counts=state.products.map(function(){return 0});state.last=-1;state.machine=0;state.expense=0;state.actual=0;save();
+ $("machine").value=0;$("expense").value=0;$("actual").value=0;
+ alert(d===0?"✅ Chốt ca khớp tiền!":(d>0?"⚠️ Chốt ca: THỪA ":"⚠️ Chốt ca: THIẾU ")+money(Math.abs(d)));
+ document.querySelector('[data-tab="history"]').click();render();
+};
+$("opening").value=state.opening;$("machine").value=state.machine;$("expense").value=state.expense;$("actual").value=state.actual;
+renderSettings();render();
+})();
+</script>
+</body>
+</html>
